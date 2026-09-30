@@ -6,6 +6,8 @@
 
 Up to five buttons on the left of the GNOME panel. Each one does a single thing: open an app, open a website, or open the applications overview.
 
+![Slots](preview.png)
+
 ---
 
 ### Table of Contents
