@@ -1,0 +1,3 @@
+.cursor/
+*.log
+schemas/gschemas.compiled

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.slots" path="/org/gnome/shell/extensions/slots/">
+    <key name="slot1-enabled" type="b">
+      <default>true</default>
+      <summary>Slot 1 enabled</summary>
+      <description>Show the first top bar button</description>
+    </key>
+    <key name="slot1-label" type="s">
+      <default>'Terminal'</default>
+      <summary>Slot 1 title</summary>
+      <description>Text shown on the first button</description>
+    </key>
+    <key name="slot1-icon" type="s">
+      <default>''</default>
+      <summary>Slot 1 icon</summary>
+      <description>Optional icon name. Empty shows only the title</description>
+    </key>
+    <key name="slot1-action" type="s">
+      <default>'app'</default>
+      <summary>Slot 1 type</summary>
+      <description>app opens an installed application; url opens a website</description>
+    </key>
+    <key name="slot1-app" type="s">
+      <default>'org.gnome.Terminal.desktop'</default>
+      <summary>Slot 1 application</summary>
+      <description>Desktop file id launched when the type is app</description>
+    </key>
+    <key name="slot1-url" type="s">
+      <default>''</default>
+      <summary>Slot 1 URL</summary>
+      <description>Website opened when the type is url</description>
+    </key>
+
+    <key name="slot2-enabled" type="b">
+      <default>true</default>
+      <summary>Slot 2 enabled</summary>
+      <description>Show the second top bar button</description>
+    </key>
+    <key name="slot2-label" type="s">
+      <default>'Files'</default>
+      <summary>Slot 2 title</summary>
+      <description>Text shown on the second button</description>
+    </key>
+    <key name="slot2-icon" type="s">
+      <default>''</default>
+      <summary>Slot 2 icon</summary>
+      <description>Optional icon name. Empty shows only the title</description>
+    </key>
+    <key name="slot2-action" type="s">
+      <default>'app'</default>
+      <summary>Slot 2 type</summary>
+      <description>app opens an installed application; url opens a website</description>
+    </key>
+    <key name="slot2-app" type="s">
+      <default>'org.gnome.Nautilus.desktop'</default>
+      <summary>Slot 2 application</summary>
+      <description>Desktop file id launched when the type is app</description>
+    </key>
+    <key name="slot2-url" type="s">
+      <default>''</default>
+      <summary>Slot 2 URL</summary>
+      <description>Website opened when the type is url</description>
+    </key>
+
+    <key name="slot3-enabled" type="b">
+      <default>false</default>
+      <summary>Slot 3 enabled</summary>
+      <description>Show the third top bar button</description>
+    </key>
+    <key name="slot3-label" type="s">
+      <default>''</default>
+      <summary>Slot 3 title</summary>
+      <description>Text shown on the third button</description>
+    </key>
+    <key name="slot3-icon" type="s">
+      <default>''</default>
+      <summary>Slot 3 icon</summary>
+      <description>Optional icon name. Empty shows only the title</description>
+    </key>
+    <key name="slot3-action" type="s">
+      <default>'url'</default>
+      <summary>Slot 3 type</summary>
+      <description>app opens an installed application; url opens a website</description>
+    </key>
+    <key name="slot3-app" type="s">
+      <default>''</default>
+      <summary>Slot 3 application</summary>
+      <description>Desktop file id launched when the type is app</description>
+    </key>
+    <key name="slot3-url" type="s">
+      <default>''</default>
+      <summary>Slot 3 URL</summary>
+      <description>Website opened when the type is url</description>
+    </key>
+  </schema>
+</schemalist>

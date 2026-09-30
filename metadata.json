@@ -1,0 +1,8 @@
+{
+  "name": "Slots",
+  "description": "Three top bar buttons. Each one opens an installed app or a website.",
+  "uuid": "slots@jettakarn",
+  "shell-version": ["46"],
+  "settings-schema": "org.gnome.shell.extensions.slots",
+  "version": 1
+}
