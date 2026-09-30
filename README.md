@@ -1,38 +1,99 @@
 # Slots
 
-Slots 在 GNOME 的 panel 左側放最多三顆獨立按鈕。每一顆只做一件事：開啟一個已安裝的應用程式，或用預設瀏覽器打開一個網址。按鈕上的文字由你自己填，跟 extension 的名稱分開。
+[Install](#install) • [Presets](#presets) • [Settings](#settings)
 
-UUID：`slots@jettakarn`。支援 GNOME Shell 46。
+![Supports GNOME Shell 46](https://img.shields.io/badge/Supports-GNOME_Shell_46-blueviolet.svg?style=flat-square&logo=gnome&logoColor=white)
 
-## 使用
+Up to five buttons on the left of the GNOME panel. Each one does a single thing: open an app, open a website, or open the applications overview.
 
-登入後，左側會先出現兩顆按鈕：
+---
 
-- **Terminal**：開啟終端機
-- **Files**：開啟檔案總管
+### Table of Contents
 
-第三格預設關閉。點左鍵就執行那一格的動作。按鈕排在左側現有項目的後面，有沒有安裝 Apps Menu 或 Places 都不影響。
+- [Introduction](#introduction)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Install](#install)
+- [Presets](#presets)
+- [Settings](#settings)
 
-自訂在 extension 的設定裡。打開 Extensions，選 Slots 的設定。三格各自有這些欄位：
+# Introduction
 
-- **Enabled**：關掉的格子不會出現在 panel 上
-- **Title**：按鈕上的文字。留空時，開 app 會改顯示應用程式名稱，開網址會改顯示網址的主機名
-- **Icon name**：可留空。留空就只顯示標題。要圖示時填圖示名稱，例如 `utilities-terminal-symbolic`
-- **Type**
-  - **Application**：按 Choose，從已安裝的應用程式裡選一個。再點按鈕會打開它；若已經在跑，就把那個視窗帶到前面
-  - **Website**：填網址。沒寫 `http://` 或 `https://` 時，會補上 `https://`
+The panel already has room for a few words. Activities is one. Apps and Places, when you use them, are others. Slots is the same kind of button, repeated up to five times, with the label and the action chosen by you. A click does the thing that button was given.
 
-選好的應用程式若之後被移除，那一顆按鈕會先隱藏，直到你在設定裡重選。預設的 Terminal 和 Files 在對應的 `.desktop` 不存在時，會改找這台電腦上已安裝的終端機或檔案總管。
+Its defaults are guided by three ideas:
 
-改完設定後，panel 上的按鈕會立刻更新，不用重新登入。
++ **One button, one action.** Open an application, open a URL, or open the applications overview. Nothing else is hiding behind the click.
++ **Start from a preset.** Default and macOS fill the five slots. The moment you change a button, the preset becomes Custom.
++ **Sit with the panel you already have.** The buttons are added at the end of the left side. Apps Menu and Places can be installed or not; Slots does not look for them.
 
-## 安裝
+UUID: `slots@jettakarn`.
 
-```bash
+# Features
+
+- Up to five separate buttons on the left of the panel.
+- Three actions: an installed application, a website in the default browser, or the applications overview.
+- Two presets, Default and macOS, and a Custom state that takes over when you edit a button.
+- A title you write. Leave it empty and the button uses the application name, the site’s host, or “Apps”.
+- Text, an icon, or both. An empty icon name uses the application’s own icon, a browser icon for websites, or the app-grid icon for Show Applications.
+- A preferences window with two pages: Buttons, then About.
+
+# Prerequisites
+
+- GNOME Shell 46
+- User extensions enabled (the default on a normal GNOME session)
+
+# Install
+
+```sh
+git clone https://github.com/jettakarn/slots.git
+cd slots
 mkdir -p ~/.local/share/gnome-shell/extensions
 ln -sfn "$(pwd)" ~/.local/share/gnome-shell/extensions/slots@jettakarn
 glib-compile-schemas ~/.local/share/gnome-shell/extensions/slots@jettakarn/schemas
 gnome-extensions enable slots@jettakarn
 ```
 
-Wayland 上，新裝的 extension 要登出再登入才會出現在 panel。之後若只是改程式，停用再啟用即可。
+On Wayland, log out and back in once so the shell can see the new extension. After that, disable and enable Slots to pick up code changes.
+
+Open **Extensions**, choose **Slots**, and set the buttons there. Changes show up on the panel without another login.
+
+# Presets
+
+Choosing a preset replaces all five buttons. **Reset** applies the current preset again. Editing any button switches the preset to **Custom**.
+
+**Default** turns on three text buttons:
+
+- **Terminal** opens a terminal
+- **Files** opens the file manager
+- **Browser** opens the default web browser
+
+The other two stay off.
+
+**macOS** turns on five text buttons:
+
+- **Files** opens the file manager
+- **Apps** opens the applications overview
+- **Browser** opens the default web browser
+- **Mail** opens the default mail client (`mailto`)
+- **Settings** opens Settings
+
+If nothing on the system handles `mailto`, Mail stays in the list as not installed and does not appear on the panel until you choose an application for it.
+
+The Default terminal, files, and browser buttons look for an installed match when their usual desktop file is missing. A button whose chosen application has been removed is hidden until you pick another one.
+
+# Settings
+
+The preferences window has two pages. **Buttons** is the one you use. **About** is the name, version, UUID, supported shell, and the repository link.
+
+On **Buttons**:
+
+- **Preset** is Default, macOS, or Custom.
+- Each panel button is one row. The switch on that row shows or hides it. Expand the row to edit it.
+- **Title** is the text on the button.
+- **Type**
+  - **Application.** Choose an installed application. A click opens it, or brings its window forward if it is already running.
+  - **Website.** Enter a URL. `https://` is added when the address has no scheme.
+  - **Show Applications.** Open the applications overview.
+- **Label style** is Text, Icon, or Text and icon.
+- **Icon name** overrides the automatic icon. Example: `utilities-terminal-symbolic`. It is shown only when the label style includes an icon.

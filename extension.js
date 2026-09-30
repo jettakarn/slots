@@ -10,111 +10,14 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const SLOT_COUNT = 3;
-
-const DEFAULT_APPS = [
-    {
-        id: 'org.gnome.Terminal.desktop',
-        keywords: ['kgx', 'ptyxis', 'gnome-terminal', 'org.gnome.Console', 'terminal'],
-    },
-    {
-        id: 'org.gnome.Nautilus.desktop',
-        keywords: ['nautilus', 'org.gnome.Nautilus', 'files'],
-    },
-    null,
-];
-
-function desktopExists(id) {
-    if (!id)
-        return false;
-    try {
-        return Gio.DesktopAppInfo.new(id) !== null;
-    } catch (e) {
-        return false;
-    }
-}
-
-function findAppByKeywords(keywords) {
-    const apps = Gio.AppInfo.get_all();
-    for (const keyword of keywords) {
-        const needle = keyword.toLowerCase();
-        for (const app of apps) {
-            try {
-                if (app.should_show && !app.should_show())
-                    continue;
-                const id = (app.get_id?.() || '').toLowerCase();
-                const name = (app.get_name?.() || '').toLowerCase();
-                const exec = (app.get_executable?.() || '').toLowerCase();
-                if (id.includes(needle) || name.includes(needle) || exec.includes(needle))
-                    return app.get_id() || null;
-            } catch (e) {
-                // Skip an app info the desktop file database cannot read.
-            }
-        }
-    }
-    return null;
-}
-
-function resolveAppId(slotIndex, storedId) {
-    if (desktopExists(storedId))
-        return storedId;
-
-    const fallback = DEFAULT_APPS[slotIndex];
-    if (!fallback)
-        return null;
-
-    const missingDefault = !storedId || storedId === fallback.id;
-    if (!missingDefault)
-        return null;
-
-    const found = findAppByKeywords(fallback.keywords);
-    return desktopExists(found) ? found : null;
-}
-
-function normalizeUrl(raw) {
-    const text = (raw || '').trim();
-    if (!text)
-        return null;
-    if (/^[a-z][a-z0-9+.-]*:/i.test(text))
-        return text;
-    return `https://${text}`;
-}
-
-function displayLabel(slot, resolvedId, uri) {
-    const custom = (slot.label || '').trim();
-    if (custom)
-        return custom;
-
-    if (slot.action === 'app' && resolvedId) {
-        try {
-            return Gio.DesktopAppInfo.new(resolvedId)?.get_name() || '';
-        } catch (e) {
-            return '';
-        }
-    }
-
-    if (!uri)
-        return '';
-    try {
-        return GLib.Uri.parse(uri, GLib.UriFlags.NONE).get_host() || uri;
-    } catch (e) {
-        return uri;
-    }
-}
-
-function readSlot(settings, index) {
-    const n = index + 1;
-    const action = settings.get_string(`slot${n}-action`) === 'url' ? 'url' : 'app';
-    return {
-        index,
-        enabled: settings.get_boolean(`slot${n}-enabled`),
-        label: settings.get_string(`slot${n}-label`),
-        icon: settings.get_string(`slot${n}-icon`).trim(),
-        action,
-        app: settings.get_string(`slot${n}-app`),
-        url: settings.get_string(`slot${n}-url`),
-    };
-}
+import {
+    SLOT_COUNT,
+    readSlot,
+    resolveAppId,
+    normalizeUrl,
+    buttonLabel,
+    resolveButtonIcon,
+} from './lib/presets.js';
 
 function launchApp(desktopId) {
     const app = Shell.AppSystem.get_default().lookup_app(desktopId);
@@ -134,9 +37,27 @@ function launchUrl(uri) {
     }
 }
 
+function showApplications() {
+    Main.overview.showApps();
+}
+
+function iconActor(icon, withLabel) {
+    const params = {
+        icon_size: 16,
+        y_align: Clutter.ActorAlign.CENTER,
+    };
+    if (icon.gicon)
+        params.gicon = icon.gicon;
+    else
+        params.icon_name = icon.iconName;
+    if (withLabel)
+        params.style = 'margin-right: 6px;';
+    return new St.Icon(params);
+}
+
 const SlotButton = GObject.registerClass(
 class SlotButton extends PanelMenu.Button {
-    constructor(label, iconName, onActivate) {
+    constructor(label, icon, showText, onActivate) {
         super(0.0, label, true);
         this._onActivate = onActivate;
         this.accessible_role = Atk.Role.PUSH_BUTTON;
@@ -148,20 +69,21 @@ class SlotButton extends PanelMenu.Button {
         });
         this.label_actor = text;
 
-        if (!iconName) {
+        if (!icon) {
             this.add_child(text);
+            return;
+        }
+
+        const graphic = iconActor(icon, showText);
+        if (!showText) {
+            this.add_child(graphic);
             return;
         }
 
         const box = new St.BoxLayout({
             y_align: Clutter.ActorAlign.CENTER,
         });
-        box.add_child(new St.Icon({
-            icon_name: iconName,
-            icon_size: 16,
-            y_align: Clutter.ActorAlign.CENTER,
-            style: 'margin-right: 6px;',
-        }));
+        box.add_child(graphic);
         box.add_child(text);
         this.add_child(box);
     }
@@ -185,8 +107,9 @@ export default class SlotsExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._buttons = [];
+        this._rebuildIdle = 0;
         this._rebuild();
-        this._changedId = this._settings.connect('changed', () => this._rebuild());
+        this._changedId = this._settings.connect('changed', () => this._scheduleRebuild());
     }
 
     disable() {
@@ -194,8 +117,23 @@ export default class SlotsExtension extends Extension {
             this._settings.disconnect(this._changedId);
             this._changedId = 0;
         }
+        if (this._rebuildIdle) {
+            GLib.source_remove(this._rebuildIdle);
+            this._rebuildIdle = 0;
+        }
         this._clear();
         this._settings = null;
+    }
+
+    _scheduleRebuild() {
+        if (this._rebuildIdle)
+            return;
+        this._rebuildIdle = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._rebuildIdle = 0;
+            if (this._settings)
+                this._rebuild();
+            return GLib.SOURCE_REMOVE;
+        });
     }
 
     _clear() {
@@ -221,13 +159,17 @@ export default class SlotsExtension extends Extension {
             if (slot.action === 'url' && !uri)
                 continue;
 
-            const label = displayLabel(slot, resolvedId, uri);
+            const label = buttonLabel(slot, resolvedId, uri);
             if (!label)
                 continue;
 
-            const button = new SlotButton(label, slot.icon, () => {
+            const icon = resolveButtonIcon(slot, resolvedId);
+            const showText = slot.display !== 'icon' || !icon;
+            const button = new SlotButton(label, icon, showText, () => {
                 if (slot.action === 'url')
                     launchUrl(uri);
+                else if (slot.action === 'apps')
+                    showApplications();
                 else
                     launchApp(resolvedId);
             });

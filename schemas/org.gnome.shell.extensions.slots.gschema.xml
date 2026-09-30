@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
   <schema id="org.gnome.shell.extensions.slots" path="/org/gnome/shell/extensions/slots/">
+    <key name="preset" type="s">
+      <default>'default'</default>
+      <summary>Preset</summary>
+      <description>default, macos, or custom. custom is set automatically when a slot is edited</description>
+    </key>
+
     <key name="slot1-enabled" type="b">
       <default>true</default>
       <summary>Slot 1 enabled</summary>
-      <description>Show the first top bar button</description>
+      <description>Show the first panel button</description>
     </key>
     <key name="slot1-label" type="s">
       <default>'Terminal'</default>
@@ -14,12 +20,17 @@
     <key name="slot1-icon" type="s">
       <default>''</default>
       <summary>Slot 1 icon</summary>
-      <description>Optional icon name. Empty shows only the title</description>
+      <description>Optional icon name. Empty uses an automatic icon when the label style includes an icon</description>
+    </key>
+    <key name="slot1-display" type="s">
+      <default>'text'</default>
+      <summary>Slot 1 label style</summary>
+      <description>text, icon, or both</description>
     </key>
     <key name="slot1-action" type="s">
       <default>'app'</default>
       <summary>Slot 1 type</summary>
-      <description>app opens an installed application; url opens a website</description>
+      <description>app opens an installed application; url opens a website; apps opens the applications overview</description>
     </key>
     <key name="slot1-app" type="s">
       <default>'org.gnome.Terminal.desktop'</default>
@@ -35,7 +46,7 @@
     <key name="slot2-enabled" type="b">
       <default>true</default>
       <summary>Slot 2 enabled</summary>
-      <description>Show the second top bar button</description>
+      <description>Show the second panel button</description>
     </key>
     <key name="slot2-label" type="s">
       <default>'Files'</default>
@@ -45,12 +56,17 @@
     <key name="slot2-icon" type="s">
       <default>''</default>
       <summary>Slot 2 icon</summary>
-      <description>Optional icon name. Empty shows only the title</description>
+      <description>Optional icon name. Empty uses an automatic icon when the label style includes an icon</description>
+    </key>
+    <key name="slot2-display" type="s">
+      <default>'text'</default>
+      <summary>Slot 2 label style</summary>
+      <description>text, icon, or both</description>
     </key>
     <key name="slot2-action" type="s">
       <default>'app'</default>
       <summary>Slot 2 type</summary>
-      <description>app opens an installed application; url opens a website</description>
+      <description>app opens an installed application; url opens a website; apps opens the applications overview</description>
     </key>
     <key name="slot2-app" type="s">
       <default>'org.gnome.Nautilus.desktop'</default>
@@ -64,33 +80,110 @@
     </key>
 
     <key name="slot3-enabled" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Slot 3 enabled</summary>
-      <description>Show the third top bar button</description>
+      <description>Show the third panel button</description>
     </key>
     <key name="slot3-label" type="s">
-      <default>''</default>
+      <default>'Browser'</default>
       <summary>Slot 3 title</summary>
       <description>Text shown on the third button</description>
     </key>
     <key name="slot3-icon" type="s">
       <default>''</default>
       <summary>Slot 3 icon</summary>
-      <description>Optional icon name. Empty shows only the title</description>
+      <description>Optional icon name. Empty uses an automatic icon when the label style includes an icon</description>
+    </key>
+    <key name="slot3-display" type="s">
+      <default>'text'</default>
+      <summary>Slot 3 label style</summary>
+      <description>text, icon, or both</description>
     </key>
     <key name="slot3-action" type="s">
-      <default>'url'</default>
+      <default>'app'</default>
       <summary>Slot 3 type</summary>
-      <description>app opens an installed application; url opens a website</description>
+      <description>app opens an installed application; url opens a website; apps opens the applications overview</description>
     </key>
     <key name="slot3-app" type="s">
       <default>''</default>
       <summary>Slot 3 application</summary>
-      <description>Desktop file id launched when the type is app</description>
+      <description>Desktop file id launched when the type is app. Empty uses the default web browser</description>
     </key>
     <key name="slot3-url" type="s">
       <default>''</default>
       <summary>Slot 3 URL</summary>
+      <description>Website opened when the type is url</description>
+    </key>
+
+    <key name="slot4-enabled" type="b">
+      <default>false</default>
+      <summary>Slot 4 enabled</summary>
+      <description>Show the fourth panel button</description>
+    </key>
+    <key name="slot4-label" type="s">
+      <default>''</default>
+      <summary>Slot 4 title</summary>
+      <description>Text shown on the fourth button</description>
+    </key>
+    <key name="slot4-icon" type="s">
+      <default>''</default>
+      <summary>Slot 4 icon</summary>
+      <description>Optional icon name. Empty uses an automatic icon when the label style includes an icon</description>
+    </key>
+    <key name="slot4-display" type="s">
+      <default>'text'</default>
+      <summary>Slot 4 label style</summary>
+      <description>text, icon, or both</description>
+    </key>
+    <key name="slot4-action" type="s">
+      <default>'app'</default>
+      <summary>Slot 4 type</summary>
+      <description>app opens an installed application; url opens a website; apps opens the applications overview</description>
+    </key>
+    <key name="slot4-app" type="s">
+      <default>''</default>
+      <summary>Slot 4 application</summary>
+      <description>Desktop file id launched when the type is app</description>
+    </key>
+    <key name="slot4-url" type="s">
+      <default>''</default>
+      <summary>Slot 4 URL</summary>
+      <description>Website opened when the type is url</description>
+    </key>
+
+    <key name="slot5-enabled" type="b">
+      <default>false</default>
+      <summary>Slot 5 enabled</summary>
+      <description>Show the fifth panel button</description>
+    </key>
+    <key name="slot5-label" type="s">
+      <default>''</default>
+      <summary>Slot 5 title</summary>
+      <description>Text shown on the fifth button</description>
+    </key>
+    <key name="slot5-icon" type="s">
+      <default>''</default>
+      <summary>Slot 5 icon</summary>
+      <description>Optional icon name. Empty uses an automatic icon when the label style includes an icon</description>
+    </key>
+    <key name="slot5-display" type="s">
+      <default>'text'</default>
+      <summary>Slot 5 label style</summary>
+      <description>text, icon, or both</description>
+    </key>
+    <key name="slot5-action" type="s">
+      <default>'app'</default>
+      <summary>Slot 5 type</summary>
+      <description>app opens an installed application; url opens a website; apps opens the applications overview</description>
+    </key>
+    <key name="slot5-app" type="s">
+      <default>''</default>
+      <summary>Slot 5 application</summary>
+      <description>Desktop file id launched when the type is app</description>
+    </key>
+    <key name="slot5-url" type="s">
+      <default>''</default>
+      <summary>Slot 5 URL</summary>
       <description>Website opened when the type is url</description>
     </key>
   </schema>

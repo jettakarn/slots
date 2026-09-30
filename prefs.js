@@ -4,19 +4,30 @@ import Gtk from 'gi://Gtk';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const SLOT_COUNT = 3;
+import {
+    SLOT_COUNT,
+    applyPreset,
+    presetId,
+    presetIndex,
+    readSlot,
+    resolveAppId,
+    normalizeUrl,
+    buttonLabel,
+    slotSubtitle,
+    resolveButtonIcon,
+} from './lib/presets.js';
 
-function describeApp(id) {
+const ACTIONS = ['app', 'url', 'apps'];
+const DISPLAYS = ['text', 'icon', 'both'];
+
+function installedName(id) {
     if (!id)
-        return 'None selected';
+        return '';
     try {
-        const info = Gio.DesktopAppInfo.new(id);
-        if (info)
-            return info.get_name();
+        return Gio.DesktopAppInfo.new(id)?.get_name() || '';
     } catch (e) {
-        // The stored desktop id is no longer installed.
+        return '';
     }
-    return 'Not installed';
 }
 
 function chooseApplication(parent, onPick) {
@@ -45,46 +56,49 @@ function chooseApplication(parent, onPick) {
     dialog.present();
 }
 
-function addSlot(page, window, settings, index) {
+function assignSelected(row, index) {
+    if (row.selected === index)
+        return;
+    row._slotsUpdating = true;
+    row.selected = index;
+    row._slotsUpdating = false;
+}
+
+function stringList(labels) {
+    const model = new Gtk.StringList();
+    for (const label of labels)
+        model.append(label);
+    return model;
+}
+
+function addSlot(group, window, settings, index) {
     const n = index + 1;
     const enabledKey = `slot${n}-enabled`;
     const labelKey = `slot${n}-label`;
     const iconKey = `slot${n}-icon`;
+    const displayKey = `slot${n}-display`;
     const actionKey = `slot${n}-action`;
     const appKey = `slot${n}-app`;
     const urlKey = `slot${n}-url`;
 
-    const group = new Adw.PreferencesGroup({
+    const row = new Adw.ExpanderRow({
         title: `Slot ${n}`,
+        show_enable_switch: true,
     });
-    page.add(group);
-
-    const enabledRow = new Adw.SwitchRow({ title: 'Enabled' });
-    group.add(enabledRow);
-    settings.bind(enabledKey, enabledRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+    group.add(row);
+    settings.bind(enabledKey, row, 'enable-expansion', Gio.SettingsBindFlags.DEFAULT);
 
     const titleRow = new Adw.EntryRow({ title: 'Title' });
-    group.add(titleRow);
+    row.add_row(titleRow);
     settings.bind(labelKey, titleRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
-    const iconRow = new Adw.EntryRow({ title: 'Icon name' });
-    group.add(iconRow);
-    settings.bind(iconKey, iconRow, 'text', Gio.SettingsBindFlags.DEFAULT);
-
-    const types = new Gtk.StringList();
-    types.append('Application');
-    types.append('Website');
     const typeRow = new Adw.ComboRow({
         title: 'Type',
-        model: types,
-        selected: settings.get_string(actionKey) === 'url' ? 1 : 0,
+        model: stringList(['Application', 'Website', 'Show Applications']),
     });
-    group.add(typeRow);
+    row.add_row(typeRow);
 
-    const appRow = new Adw.ActionRow({
-        title: 'Application',
-        subtitle: describeApp(settings.get_string(appKey)),
-    });
+    const appRow = new Adw.ActionRow({ title: 'Application' });
     const choose = new Gtk.Button({
         label: 'Choose',
         valign: Gtk.Align.CENTER,
@@ -94,40 +108,209 @@ function addSlot(page, window, settings, index) {
     });
     appRow.add_suffix(choose);
     appRow.activatable_widget = choose;
-    group.add(appRow);
+    row.add_row(appRow);
 
     const urlRow = new Adw.EntryRow({ title: 'URL' });
-    group.add(urlRow);
+    row.add_row(urlRow);
     settings.bind(urlKey, urlRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
-    const syncType = () => {
-        const isUrl = settings.get_string(actionKey) === 'url';
-        const selected = isUrl ? 1 : 0;
-        if (typeRow.selected !== selected)
-            typeRow.selected = selected;
-        appRow.visible = !isUrl;
-        urlRow.visible = isUrl;
-    };
+    const displayRow = new Adw.ComboRow({
+        title: 'Label style',
+        model: stringList(['Text', 'Icon', 'Text and icon']),
+    });
+    row.add_row(displayRow);
+
+    const iconRow = new Adw.EntryRow({ title: 'Icon name' });
+    const preview = new Gtk.Image({
+        pixel_size: 16,
+        valign: Gtk.Align.CENTER,
+    });
+    iconRow.add_suffix(preview);
+    row.add_row(iconRow);
+    settings.bind(iconKey, iconRow, 'text', Gio.SettingsBindFlags.DEFAULT);
 
     typeRow.connect('notify::selected', () => {
-        const action = typeRow.selected === 1 ? 'url' : 'app';
+        if (typeRow._slotsUpdating)
+            return;
+        const action = ACTIONS[typeRow.selected] || 'app';
         if (settings.get_string(actionKey) !== action)
             settings.set_string(actionKey, action);
     });
-    settings.connect(`changed::${actionKey}`, syncType);
-    settings.connect(`changed::${appKey}`, () => {
-        appRow.subtitle = describeApp(settings.get_string(appKey));
+    displayRow.connect('notify::selected', () => {
+        if (displayRow._slotsUpdating)
+            return;
+        const display = DISPLAYS[displayRow.selected] || 'text';
+        if (settings.get_string(displayKey) !== display)
+            settings.set_string(displayKey, display);
     });
-    syncType();
+
+    const refresh = () => {
+        const slot = readSlot(settings, index);
+        const resolvedId = slot.action === 'app' ? resolveAppId(index, slot.app) : null;
+        const uri = slot.action === 'url' ? normalizeUrl(slot.url) : null;
+        const label = buttonLabel(slot, resolvedId, uri);
+
+        row.title = label || `Slot ${n}`;
+        row.subtitle = slotSubtitle(slot, resolvedId, uri);
+
+        assignSelected(typeRow, Math.max(ACTIONS.indexOf(slot.action), 0));
+        assignSelected(displayRow, Math.max(DISPLAYS.indexOf(slot.display), 0));
+
+        appRow.visible = slot.action === 'app';
+        appRow.subtitle = installedName(resolvedId) || 'Not installed';
+        urlRow.visible = slot.action === 'url';
+        iconRow.visible = slot.display !== 'text';
+
+        const icon = resolveButtonIcon({ ...slot, display: 'both' }, resolvedId);
+        if (!icon) {
+            preview.visible = false;
+            return;
+        }
+        preview.visible = true;
+        if (icon.gicon)
+            preview.set_from_gicon(icon.gicon);
+        else
+            preview.set_from_icon_name(icon.iconName);
+    };
+
+    refresh();
+    return refresh;
+}
+
+function buildButtonsPage(window, settings) {
+    const page = new Adw.PreferencesPage({
+        title: 'Buttons',
+        icon_name: 'view-grid-symbolic',
+    });
+
+    const presetGroup = new Adw.PreferencesGroup({
+        title: 'Preset',
+        description: 'Choosing Default or macOS replaces every button. Editing a button switches the preset to Custom.',
+    });
+    page.add(presetGroup);
+
+    const presetRow = new Adw.ComboRow({
+        title: 'Preset',
+        model: stringList(['Default', 'macOS', 'Custom']),
+    });
+    const reset = new Gtk.Button({
+        label: 'Reset',
+        valign: Gtk.Align.CENTER,
+    });
+    presetRow.add_suffix(reset);
+    presetGroup.add(presetRow);
+
+    const buttonGroup = new Adw.PreferencesGroup({
+        title: 'Panel buttons',
+        description: 'Each row is one button on the left side of the panel. Turn a row off to hide it.',
+    });
+    page.add(buttonGroup);
+
+    const refreshers = [];
+    for (let i = 0; i < SLOT_COUNT; i++)
+        refreshers.push(addSlot(buttonGroup, window, settings, i));
+
+    let applyingPreset = false;
+
+    const syncPreset = () => {
+        assignSelected(presetRow, presetIndex(settings.get_string('preset')));
+        reset.sensitive = settings.get_string('preset') !== 'custom';
+    };
+
+    const refreshAll = () => {
+        for (const refresh of refreshers)
+            refresh();
+    };
+
+    const usePreset = name => {
+        applyingPreset = true;
+        try {
+            applyPreset(settings, name);
+        } finally {
+            applyingPreset = false;
+        }
+        syncPreset();
+        refreshAll();
+    };
+
+    presetRow.connect('notify::selected', () => {
+        if (presetRow._slotsUpdating || applyingPreset)
+            return;
+        const name = presetId(presetRow.selected);
+        if (name === 'custom') {
+            if (settings.get_string('preset') !== 'custom')
+                settings.set_string('preset', 'custom');
+            return;
+        }
+        usePreset(name);
+    });
+
+    reset.connect('clicked', () => {
+        const name = settings.get_string('preset');
+        if (name === 'default' || name === 'macos')
+            usePreset(name);
+    });
+
+    settings.connect('changed', (_settings, key) => {
+        if (key === 'preset') {
+            syncPreset();
+            return;
+        }
+        if (applyingPreset || !key.startsWith('slot'))
+            return;
+        refreshAll();
+        if (settings.get_string('preset') !== 'custom')
+            settings.set_string('preset', 'custom');
+    });
+
+    syncPreset();
+    return page;
+}
+
+function buildAboutPage(metadata) {
+    const page = new Adw.PreferencesPage({
+        title: 'About',
+        icon_name: 'help-about-symbolic',
+    });
+    const shells = metadata['shell-version'];
+    const group = new Adw.PreferencesGroup({
+        description: metadata.description || '',
+    });
+    page.add(group);
+
+    group.add(new Adw.ActionRow({
+        title: 'Name',
+        subtitle: metadata.name || 'Slots',
+    }));
+    group.add(new Adw.ActionRow({
+        title: 'Version',
+        subtitle: `${metadata.version ?? ''}`,
+    }));
+    group.add(new Adw.ActionRow({
+        title: 'UUID',
+        subtitle: metadata.uuid || 'slots@jettakarn',
+    }));
+    group.add(new Adw.ActionRow({
+        title: 'GNOME Shell',
+        subtitle: Array.isArray(shells) ? shells.join(', ') : `${shells || ''}`,
+    }));
+
+    const link = new Adw.ActionRow({
+        title: 'Website',
+        subtitle: 'github.com/jettakarn/slots',
+        activatable: true,
+    });
+    link.connect('activated', () => {
+        Gio.AppInfo.launch_default_for_uri('https://github.com/jettakarn/slots', null);
+    });
+    group.add(link);
+    return page;
 }
 
 export default class SlotsPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
-        const page = new Adw.PreferencesPage();
-        window.add(page);
-
-        for (let i = 0; i < SLOT_COUNT; i++)
-            addSlot(page, window, settings, i);
+        window.add(buildButtonsPage(window, settings));
+        window.add(buildAboutPage(this.metadata));
     }
 }
