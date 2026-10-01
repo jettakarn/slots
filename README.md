@@ -1,6 +1,6 @@
 # Slots
 
-[Install](#install) • [Presets](#presets) • [Settings](#settings)
+[Install](#install) • [Presets](#presets) • [Settings](#settings) • [LLM policy](#llm-policy)
 
 ![Supports GNOME Shell 46](https://img.shields.io/badge/Supports-GNOME_Shell_46-blueviolet.svg?style=flat-square&logo=gnome&logoColor=white)
 
@@ -18,6 +18,7 @@ Up to five buttons on the left of the GNOME panel. Each one does a single thing:
 - [Install](#install)
 - [Presets](#presets)
 - [Settings](#settings)
+- [LLM policy](#llm-policy)
 
 # Introduction
 
@@ -99,3 +100,9 @@ On **Buttons**:
   - **Show Applications.** Open the applications overview.
 - **Label style** is Text, Icon, or Text and icon.
 - **Icon name** overrides the automatic icon. Example: `utilities-terminal-symbolic`. It is shown only when the label style includes an icon.
+
+# LLM policy
+
+This repository was developed with AI. The extension, its presets, and this README were written with an AI coding assistant, then reviewed and kept by the maintainer.
+
+AI-assisted contributions are fine. Say so in the pull request, keep the change small enough to review, and answer questions about it yourself.
