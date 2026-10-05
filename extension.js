@@ -10,6 +10,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import { MenuBar } from './lib/menuBar.js';
 import {
     SLOT_COUNT,
     readSlot,
@@ -108,8 +109,12 @@ export default class SlotsExtension extends Extension {
         this._settings = this.getSettings();
         this._buttons = [];
         this._rebuildIdle = 0;
+        this._menuBar = new MenuBar();
+        this._menuBar.enable();
         this._rebuild();
-        this._changedId = this._settings.connect('changed', () => this._scheduleRebuild());
+        this._changedId = this._settings.connect('changed', () => {
+            this._onSettingsChanged();
+        });
     }
 
     disable() {
@@ -121,8 +126,14 @@ export default class SlotsExtension extends Extension {
             GLib.source_remove(this._rebuildIdle);
             this._rebuildIdle = 0;
         }
+        this._menuBar?.disable();
+        this._menuBar = null;
         this._clear();
         this._settings = null;
+    }
+
+    _onSettingsChanged() {
+        this._scheduleRebuild();
     }
 
     _scheduleRebuild() {
@@ -140,6 +151,27 @@ export default class SlotsExtension extends Extension {
         for (const button of this._buttons)
             button.destroy();
         this._buttons = [];
+    }
+
+    _slotPosition() {
+        const box = Main.panel._leftBox;
+        const name = Main.panel.statusArea['slots-app']?.container;
+        if (box?.get_children && name) {
+            const children = box.get_children();
+            for (let i = 0; i < children.length; i++) {
+                if (children[i] === name)
+                    return i + 1 + this._buttons.length;
+            }
+        }
+        const activities = Main.panel.statusArea.activities?.container;
+        if (box?.get_children && activities) {
+            const children = box.get_children();
+            for (let i = 0; i < children.length; i++) {
+                if (children[i] === activities)
+                    return i + 1 + this._buttons.length;
+            }
+        }
+        return box?.get_n_children?.() ?? 0;
     }
 
     _rebuild() {
@@ -174,8 +206,7 @@ export default class SlotsExtension extends Extension {
                     launchApp(resolvedId);
             });
 
-            const position = Main.panel._leftBox?.get_n_children?.() ?? 0;
-            Main.panel.addToStatusArea(`slots-${i + 1}`, button, position, 'left');
+            Main.panel.addToStatusArea(`slots-${i + 1}`, button, this._slotPosition(), 'left');
             this._buttons.push(button);
         }
     }

@@ -4,7 +4,7 @@
 
 ![Supports GNOME Shell 46](https://img.shields.io/badge/Supports-GNOME_Shell_46-blueviolet.svg?style=flat-square&logo=gnome&logoColor=white)
 
-Up to five buttons on the left of the GNOME panel. Each one does a single thing: open an app, open a website, or open the applications overview.
+Up to five buttons on the left of the GNOME panel, with the focused application’s name in bold just to the right of Activities. Each button opens an app, a website, or the applications overview.
 
 ![Slots](preview.png)
 
@@ -27,15 +27,16 @@ The panel already has room for a few words. Activities is one. Apps and Places, 
 Its defaults are guided by three ideas:
 
 + **One button, one action.** Open an application, open a URL, or open the applications overview. Nothing else is hiding behind the click.
-+ **Start from a preset.** Default and macOS fill the five slots. The moment you change a button, the preset becomes Custom.
-+ **Sit with the panel you already have.** The buttons are added at the end of the left side. Apps Menu and Places can be installed or not; Slots does not look for them.
++ **Show what is in front.** The focused application’s name sits in bold, immediately to the right of Activities. The shortcut buttons follow that name.
++ **Sit with the panel you already have.** Activities stays where GNOME put it. Apps Menu and Places can be installed or not; Slots does not look for them.
 
 UUID: `slots@jettakarn`.
 
 # Features
 
-- Up to five separate buttons on the left of the panel.
+- Up to five separate buttons on the left of the panel, after the focused application’s name.
 - Three actions: an installed application, a website in the default browser, or the applications overview.
+- The focused application’s name, in bold, to the right of Activities. It is a label. With no focused window, only the shortcut buttons remain.
 - Two presets, Default and macOS, and a Custom state that takes over when you edit a button.
 - A title you write. Leave it empty and the button uses the application name, the site’s host, or “Apps”.
 - Text, an icon, or both. An empty icon name uses the application’s own icon, a browser icon for websites, or the app-grid icon for Show Applications.
@@ -63,7 +64,7 @@ Open **Extensions**, choose **Slots**, and set the buttons there. Changes show u
 
 # Presets
 
-Choosing a preset replaces all five buttons. **Reset** applies the current preset again. Editing any button switches the preset to **Custom**.
+The focused application’s name is always separate from the preset. It appears in bold, immediately to the right of Activities, and the preset buttons follow it. Choosing a preset replaces all five buttons. **Reset** applies the current preset again. Editing any button switches the preset to **Custom**.
 
 **Default** turns on three text buttons:
 
@@ -91,7 +92,7 @@ The preferences window has two pages. **Buttons** is the one you use. **About** 
 
 On **Buttons**:
 
-- **Preset** is Default, macOS, or Custom.
+- **Preset** is Default, macOS, or Custom. **Reset** writes the selected Default or macOS preset again.
 - Each panel button is one row. The switch on that row shows or hides it. Expand the row to edit it.
 - **Title** is the text on the button.
 - **Type**

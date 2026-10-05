@@ -1,5 +1,6 @@
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 import Gtk from 'gi://Gtk';
 
 import { ExtensionPreferences } from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -185,7 +186,7 @@ function buildButtonsPage(window, settings) {
 
     const presetGroup = new Adw.PreferencesGroup({
         title: 'Preset',
-        description: 'Choosing Default or macOS replaces every button. Editing a button switches the preset to Custom.',
+        description: 'Choosing Default or macOS replaces every button. Editing a button switches the preset to Custom. The focused application’s name stays on the panel either way.',
     });
     page.add(presetGroup);
 
@@ -202,7 +203,7 @@ function buildButtonsPage(window, settings) {
 
     const buttonGroup = new Adw.PreferencesGroup({
         title: 'Panel buttons',
-        description: 'Each row is one button on the left side of the panel. Turn a row off to hide it.',
+        description: 'Each row is one button on the left side of the panel, after the focused application’s name. Turn a row off to hide it.',
     });
     page.add(buttonGroup);
 
@@ -233,6 +234,17 @@ function buildButtonsPage(window, settings) {
         refreshAll();
     };
 
+    let presetIdle = 0;
+    const queuePreset = name => {
+        if (presetIdle)
+            GLib.source_remove(presetIdle);
+        presetIdle = GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            presetIdle = 0;
+            usePreset(name);
+            return GLib.SOURCE_REMOVE;
+        });
+    };
+
     presetRow.connect('notify::selected', () => {
         if (presetRow._slotsUpdating || applyingPreset)
             return;
@@ -242,7 +254,7 @@ function buildButtonsPage(window, settings) {
                 settings.set_string('preset', 'custom');
             return;
         }
-        usePreset(name);
+        queuePreset(name);
     });
 
     reset.connect('clicked', () => {
