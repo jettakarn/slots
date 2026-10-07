@@ -1,5 +1,7 @@
 # Slots
 
+[繁體中文](README.zh-TW.md)
+
 [Install](#install) • [Presets](#presets) • [Settings](#settings) • [LLM policy](#llm-policy)
 
 ![Supports GNOME Shell 46](https://img.shields.io/badge/Supports-GNOME_Shell_46-blueviolet.svg?style=flat-square&logo=gnome&logoColor=white)
